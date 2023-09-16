@@ -1,0 +1,407 @@
+DROP TABLE IF EXISTS Preferenza cascade; 
+DROP TABLE IF EXISTS Societa cascade;
+DROP TABLE IF EXISTS Professionista cascade;
+DROP TABLE IF EXISTS Account cascade; 
+DROP TABLE IF EXISTS PropostaSocieta cascade; 
+DROP TABLE IF EXISTS PropostaProfessionista cascade; 
+DROP TABLE IF EXISTS Disciplina cascade; 
+DROP TABLE IF EXISTS Struttura cascade; 
+DROP TABLE IF EXISTS Cooperazione cascade; 
+DROP TABLE IF EXISTS Servizio cascade; 
+DROP TABLE IF EXISTS Proposta cascade; 
+DROP TABLE IF EXISTS Utente cascade; 
+DROP TABLE IF EXISTS Cellulare cascade; 
+DROP TABLE IF EXISTS Pagamento cascade; 
+DROP TABLE IF EXISTS Invito cascade;
+DROP TABLE IF EXISTS Esecuzione cascade;
+DROP TABLE IF EXISTS Prenotazione cascade;
+DROP TABLE IF EXISTS Amicizia cascade;
+DROP DOMAIN IF EXISTS TipoEsito cascade;
+DROP DOMAIN IF EXISTS TipoLivello cascade;
+DROP DOMAIN IF EXISTS TipoPrenotazione cascade;
+
+
+create domain TipoPrenotazione as varchar(10)
+check (value = 'Acquistato' or value = 'Attesa');
+
+create domain TipoEsito as varchar(10)
+check (value = 'Accettato' or value = 'Rifiutato' or value = 'Attesa');
+	
+create domain TipoLivello as varchar(20)
+check(value = 'Amatoriale' or value = 'Novizio' or value = 'Agonistico');
+
+create table Disciplina (
+	Codice serial primary key,
+	Nome varchar(30) not NULL UNIQUE,
+	img bytea
+);
+
+create table Account(
+	Email varchar(255) Primary Key,
+	Username varchar(30) not NULL UNIQUE,
+	Password varchar(255)not NULL
+);
+
+create table Societa(
+	CF char(11) Primary Key,
+	Telefono varchar(20) not NULL,
+	Denominazione varchar(30),
+	PartitaIva char (11) not NULL UNIQUE, 
+	Tipo varchar(30),
+	Indirizzo varchar(30),
+	CAP char(5) default '00000',
+	Username varchar(30) UNIQUE,
+	constraint Foreign_Societa Foreign Key (Username) references Account(Username) on update restrict on delete set NULL
+);
+
+create table Professionista(
+	CF char(16) Primary Key,
+	Telefono varchar(20) not NULL,
+	Nome varchar(52) not NULL, 
+	Cognome varchar(52) not NULL,
+	DataDiNascita date,
+	Indirizzo varchar(30),
+	CAP char(5) default '00000',
+	Username varchar(30) UNIQUE,
+	constraint Foreign_Professionista Foreign Key (Username) references Account(Username) on update restrict on delete set NULL
+);
+
+create table Utente(
+	CF char(16) Primary key,
+	Nome varchar(52) not NULL,
+	Cognome varchar(52) not NULL,
+	DataDiNascita date not NULL,
+	IndirizzoDiResidenza varchar(30) not NULL,
+	Username varchar(30) UNIQUE,
+	immagine bytea,
+	constraint Foreign_Utente foreign key(Username) references Account(Username) on update restrict on delete set NULL
+);
+
+create table Cellulare(
+	Numero varchar(20) Primary key,
+	Utente varchar(16) not NULL,
+	constraint Foreign_Cellulare foreign key (Utente) references Utente on update cascade on delete restrict 
+);
+
+
+create table Pagamento(
+	NumeroCarta char(16) Primary key,
+	NomeIntestatario varchar(52) not NULL,
+	CognomeIntestatario varchar(52) not NULL,
+	Scadenza char(7) not NULL,
+	CVC char(3) not null,
+	Utente char(16) not null,
+	constraint Foreign_Pagamento foreign key(Utente) references Utente on update cascade on delete restrict, 
+	constraint Check_Scadenza Check (Scadenza like '__/20__')
+);
+
+create table Servizio(
+	Codice serial primary key,
+	Titolo varchar(100) not NULL,
+	Descrizione varchar(255) not NULL,
+	NumeroPosti integer not NULL,
+	Condiviso boolean not NULL,
+	Disciplina integer not NULL,
+	constraint Key_Disciplina foreign key (Disciplina) references Disciplina on update cascade on delete restrict,
+	constraint NumeroPostiMaggioreDiZero CHECK(NumeroPosti > 0)
+);
+
+create table Struttura(
+	Codice serial primary key,
+	Nome varchar(30) not NULL,
+	Indirizzo varchar(255) not NULL,
+	Descrizione varchar(100),
+	img bytea
+);
+
+
+create table Proposta(
+	Codice serial primary key,
+	Servizio integer not NULL,
+	Costo decimal(6,2) not NULL,
+	OraFine time not NULL,
+	Data date not NULL,
+	OraInizio time not NULL,
+	Struttura integer not NULL,
+	UNIQUE(Struttura, Data, OraInizio),
+	constraint oraFineMaggioreDioraInizio Check (oraFine > oraInizio),
+	constraint CostoMaggioreDiZero CHECK (Costo > 0),
+	constraint Key_Servizio foreign key (Servizio) references Servizio on update cascade on delete restrict,
+	constraint Key_Struttura foreign key (Struttura) references Struttura on update cascade on delete restrict
+);
+
+create table PropostaSocieta (
+	Proposta integer primary key,
+	Societa char(11) not NULL,
+	constraint Foreign_PropostaSocieta foreign key (Proposta) references Proposta on update restrict on delete restrict,
+	constraint Foreign_PropostaSocieta_Servizio foreign key (Societa) references Societa on update cascade on delete restrict
+);
+
+
+create table PropostaProfessionista(
+	Proposta integer primary key,
+	Professionista char(16) not NULL,
+	constraint Foreign_PropostaProfessionista foreign key (Professionista) references Professionista on update cascade on delete restrict,
+	constraint Foreign_PropostaProposta foreign key (Proposta) references Proposta on update restrict on delete restrict
+);
+
+create table Cooperazione(
+	Proposta integer primary key,
+	Societa char(11) not NULL,
+	Professionista char(16) not NULL,
+	constraint Foreign_CooperazioneSocieta foreign key (Societa) references Societa on update cascade on delete restrict,
+	constraint Foreign_CooperazioneProfessionista foreign key (Professionista) references Professionista on update cascade on delete restrict,
+	constraint Foreign_CooperazioneProposta foreign key (Proposta) references Proposta on update restrict on delete restrict
+);
+
+
+create table Prenotazione(
+	Codice serial primary key,
+	DataEsito timestamp,
+	Esito TipoPrenotazione default 'Acquistato',
+	Utente char(16)not null,
+	Proposta integer not null,
+	codiceEvento varchar(255),
+	Attesa boolean default 'false',
+	Conferma boolean default 'false',
+	constraint Key_Prenotazione_Proposta foreign key (Proposta) references Proposta on update restrict on delete restrict,
+	constraint Key_Prenotazione_Utente foreign key (Utente) references Utente on update cascade on delete restrict
+);
+
+create table Invito(
+	Codice serial Primary key,
+	Descrizione  varchar(255) not null,
+	DataEsito timestamp,
+	Esito TipoEsito default 'Attesa',
+	Prenotazione integer not null,
+	UtenteInvitato char(16) not null,
+	constraint Foreign_InvitoAcquisto foreign key (Prenotazione) references Prenotazione on update restrict on delete restrict,
+	constraint Foreign_InvitoUtente foreign key(UtenteInvitato) references Utente on update cascade on delete restrict 
+);
+
+create table Preferenza(
+	Disciplina integer,
+	Utente char(16),
+	Livello TipoLivello not NULL,
+	constraint Key_Preferenza Primary Key (Disciplina,Utente),
+	constraint Foreign_Preferenza_Disciplina Foreign Key (Disciplina) references Disciplina on update cascade on delete restrict,
+	constraint Foreign_Preferenza_Utente Foreign Key (Utente) references Utente on update cascade on delete restrict
+);
+
+create table Amicizia(
+	Utente char(16),
+	Amico char(16),
+	Disciplina integer,
+	calendarId varchar(255),
+	constraint Key_Amicizia Primary Key (Utente, Amico,Disciplina),
+	constraint UtenteAmico Check (Utente <> Amico),
+	constraint Foreign_Amicizia_Amico Foreign Key (Utente) references Utente on update cascade on delete restrict,
+	constraint Foreign_Amicizia_Utente Foreign Key (Amico) references Utente on update cascade on delete restrict,
+	constraint Foreign_Amicizia_Disciplina Foreign Key (Disciplina) references Disciplina on update cascade on delete restrict
+);	
+
+create view vistaServizioProposto as 
+Select P.codice,Sc.denominazione, St.Nome as Struttura, St.indirizzo, D.nome, S.descrizione, P.data, P.costo, P.orainizio, P.orafine, S.Condiviso,S.titolo as titolo, D.codice as Disciplina, St.img as immagine
+FROM Societa Sc, Struttura St, Servizio S, Proposta P, PropostaSocieta Ps, Disciplina D
+where Sc.CF= Ps.societa AND Ps.proposta=P.codice AND P.servizio=S.codice AND P.struttura=St.Codice and D.Codice=S.disciplina;
+
+create view prenotazioniAcquistate as
+select P.codice, P.utente, S.titolo ,D.codice as idDisciplina,Pr.Costo, Pr.orainizio, Pr.orafine, Pr.data, St.nome as Struttura,Pr.Struttura as idstruttura, S.condiviso,
+	St.indirizzo as luogo, S.descrizione, P.codiceEvento as evento, D.img as immagine, P.attesa as attesa, P.dataesito as esitod, P.conferma as conferma
+from prenotazione P, proposta Pr, Servizio S, Disciplina D, Struttura St
+where P.esito = 'Acquistato' and P.proposta = Pr.Codice and S.codice = Pr.servizio and S.disciplina = D.codice and pr.Struttura= St.Codice;
+
+create view prenotazioniAttesa as
+select P.codice, P.utente, S.titolo ,D.codice as idDisciplina,Pr.Costo, Pr.orainizio, Pr.orafine, Pr.data, St.nome as Struttura,Pr.Struttura as idstruttura, S.condiviso,
+St.indirizzo as luogo, S.descrizione, P.codiceEvento as evento, D.img as immagine
+from prenotazione P, proposta Pr, Servizio S, Disciplina D, Struttura St
+where P.esito = 'Attesa' and P.proposta = Pr.Codice and S.codice = Pr.servizio and D.codice = S.disciplina and St.codice = Pr.struttura;
+
+create view invitiEffettuati as
+select UU.CF as utente, U.nome, U.cognome, Disciplina.nome as disciplina, Struttura.nome as struttura, Invito.Esito, Prenotazione.codice, U.immagine, Proposta.data,Proposta.orainizio,Proposta.orafine
+from Invito,Prenotazione,Utente U, Utente UU,Proposta,Servizio,Struttura,Disciplina
+where Invito.utenteinvitato = U.CF and invito.prenotazione = Prenotazione.codice and prenotazione.proposta = Proposta.codice and
+		Proposta.Servizio = Servizio.codice and Proposta.Struttura=Struttura.codice and Servizio.Disciplina = Disciplina.codice and
+		UU.CF = Prenotazione.Utente;
+
+create view partecipazione as
+select Invito.codice, U.cf as invitato, UU.nome, UU.cf as invitante, UU.immagine as invitanteimg, Disciplina.nome as disciplina, Struttura.nome as struttura, Struttura.indirizzo as indirizzo ,Proposta.data,Proposta.orainizio,
+Proposta.orafine,Proposta.costo,Servizio.numeroposti,invito.esito, Prenotazione.esito as esitoprenotazione, Prenotazione.codiceEvento as evento, invito.descrizione as invitodescri
+from Invito,Prenotazione,Utente U, Utente UU,Proposta,Servizio,Struttura,Disciplina
+where Invito.utenteinvitato = U.CF and invito.prenotazione = Prenotazione.codice and prenotazione.proposta = Proposta.codice and
+		Proposta.Servizio = Servizio.codice and Proposta.Struttura=Struttura.codice and Servizio.Disciplina = Disciplina.codice and
+		UU.CF = Prenotazione.Utente;
+
+
+Insert into Disciplina (Nome,img) values ('Beach volleyball','beach.jpg');
+Insert into Disciplina (Nome,img) values ('Spinning','spinning.jpg');
+Insert into Disciplina (Nome,img) values ('Zumba','zumba.jpg');
+Insert into Disciplina (Nome,img) values ('Boxe','boxe.jpg');
+
+
+Insert into Account values ('delregnoemiliana@gmail.com','Edelregno','1');
+Insert into Account values ('s.landi2@gmail.com','Slandi','1');
+Insert into Account values ('alessandropaolillo67@gmail.com','Apaolillo','1');
+Insert into Account values ('landithomas1999@gmail.com','Tlandi','1');
+Insert into Account values ('marcosavarese99@gmail.com','Msavarese','1');
+Insert into Account values ('fiscianospa@gmail.com','fspagcom','1');
+Insert into Account values ('lancusisnc@gmail.com','lsncgcom','1');
+Insert into Account values ('salernospa@gmail.com','sspagcom','1');
+Insert into Account values ('baronissispa@gmail.com','barpagcom','1');
+Insert into Account values ('v.concilio6@studenti.unisa.it','Vconcilio','1');
+Insert into Account values ('f.fortunato7@studenti.unisa.it','Ffortunato','1');
+Insert into Account values ('m.memoli8@studenti.unisa.it','Mmemoli','1');
+Insert into Account values ('s.colapesce9@studenti.unisa.it','Scolapesce','1');
+Insert into Account values ('prof.mario@gmail.com','Profmario','1');
+Insert into Account values ('profvinci@gmail.com','Profvinci','1');
+
+Insert into Societa values ('12345678912','089302230','Federazione Fisciano SPA','12345678912','Federazione','Via Roma','84100','fspagcom');
+Insert into Societa values ('43215678912','089336712','Palestra Lancusi SNC','43215678912','Palestra','Via Napoli','94105','lsncgcom');
+Insert into Societa values ('12341234912','089312019','Federazione Salerno SPA.','14321567891','Federazione','Via Firenze','91340','sspagcom');
+Insert into Societa values ('12344321912','089282015','Federazione Baronissi SPA.','12344321912','Federazione','Via Milano','90100','barpagcom');
+
+Insert into Professionista values ('DGRMRA99L01L219J','3332534556','Mario','De Gregori','1999-07-01','Via Cagliari','86700','Profmario');
+Insert into Professionista values ('BDAPPP86D23H703F','3333644234','Pippo','Vinci','1986-04-23','Via Da Vinci','95110','Profvinci');
+
+
+
+insert into Utente values ('SPSGNR89T12G942K','Emiliana','Del Regno','12/12/1996','Via Nicola Farina ','Edelregno','emiliana.jpg');
+insert into Utente values ('LNDSRA00R41L781V','Sara','Landi','01/10/2000','Corso Emanuele ','Slandi','sara.jpg');
+insert into Utente values ('PLLLSN99C20H703T','Alessandro','Paolillo','20/03/1999','Via Sandro Pertini','Apaolillo','ale.jpg');
+insert into Utente values ('LNDTMS99S13F138A','Thomas','Landi','13/11/1999','Via Nicola Farina ','Tlandi','tommy.jpg');
+insert into Utente values ('SVRMRC79H19H703D','Marco','Savarese','19/06/1979','Via Salvador Allende','Msavarese','marco.jpg');
+insert into Utente values ('CNCVLR01M44L483D','Valeria','Concilio','04/08/2001','Via Ferreria', 'Vconcilio','valeria.jpg');
+insert into Utente values ('FRTFNC77L45L219Y','Francesca','Fortunato','05/07/1977','Via Machiavelli','Ffortunato','francesca.jpg');
+insert into Utente values ('MMLMTT85M14H199M','Matteo','Memoli','14/08/85','Via Giovanni Paolo II','Mmemoli','matteo.jpg');
+insert into Utente values ('CLPSRN94T65A944U','Serena','Colapesce','25/03/94','Via Don Mizzoni','Scolapesce','serena.jpg');
+
+insert into Cellulare values ('3400427881','SPSGNR89T12G942K');
+insert into Cellulare values ('3310378810','LNDSRA00R41L781V');
+insert into Cellulare values ('3331015300','PLLLSN99C20H703T');
+insert into Cellulare values ('3400721672','LNDTMS99S13F138A');
+insert into Cellulare values ('3312564098','SVRMRC79H19H703D');
+insert into Cellulare values ('3276509876','CNCVLR01M44L483D');
+insert into Cellulare values ('3401234567','FRTFNC77L45L219Y');
+insert into Cellulare values ('3392555321','MMLMTT85M14H199M');
+insert into Cellulare values ('3271467947','CLPSRN94T65A944U');
+
+insert into Pagamento values ('1234567891234567','Gennaro','Esposito','12/2025','123','SPSGNR89T12G942K');
+insert into Pagamento values ('1223344556677889','Sara','Landi','10/2026','345','LNDSRA00R41L781V');
+insert into Pagamento values ('8956948763591365','Alessandro','Paolillo','07/2027','115','PLLLSN99C20H703T');
+insert into Pagamento values ('1029384756473829','Thomas','Landi','08/2025','789','LNDTMS99S13F138A');
+insert into Pagamento values ('9887766554433221','Marco','Savarese','09/2023','567','SVRMRC79H19H703D');
+insert into Pagamento values ('3242353453454543','Valeria','Concilio','01/2025','118','CNCVLR01M44L483D');
+insert into Pagamento values ('7968574635241324','Serena','Memoli','11/2024','910','PLLLSN99C20H703T');
+insert into Pagamento values ('9167591647657416','Francesca','Fortunato','03/2029','133','FRTFNC77L45L219Y');
+insert into Pagamento values ('234567432rr34756','Matteo','Memoli','03/2022','919','MMLMTT85M14H199M');
+insert into Pagamento values ('9814545683746538','Serena','Colapesce','02/2023','113','CLPSRN94T65A944U');
+
+
+insert into Servizio (Titolo,Descrizione,NumeroPosti,Condiviso,Disciplina) values ('Partita beach volleyball', 'Offriamo il nostro campo migliore per partita di beach Volleyball', '4', 'true', '1');
+insert into Servizio (Titolo,Descrizione,NumeroPosti,Condiviso,Disciplina) values ('Lezione di spinning', 'Lezione individuale di spinning, ottimo per bruciare calorie', '1', 'false', '2');
+insert into Servizio (Titolo,Descrizione,NumeroPosti,Condiviso,Disciplina) values ('Corso di zumba', 'Corso di zumba ricreativo, aerobico e di rinforzo che coinvolge tutto il corpo', '1', 'false', '3');
+insert into Servizio (Titolo,Descrizione,NumeroPosti,Condiviso,Disciplina) values ('Lezione di boxe', 'Lezione di boxe per tutte le categorie', '1', 'false', '4');
+
+insert into Struttura (Nome,Indirizzo,Descrizione,img) values ('Village','Corso Italia, 36, 84098 Pontecagnano SA','Offriamo tutti i servizi  che desideri','fisciano.jpg');
+insert into Struttura (Nome,Indirizzo,Descrizione,img) values ('De Gasperi','Via Raffaele Cavallo, 7/9, 84126 Salerno SA','Tutto per gli appassionati di sport','lancusi.jpg');
+insert into Struttura (Nome,Indirizzo,Descrizione,img) values ('Salvador','Via Tiberio Claudio Felice, 50, 84131 Salerno SA','Struttura per gli amanti del terzo tempo e non solo','terzo.jpg');
+
+insert into Proposta (Servizio,Costo,Data,OraInizio,OraFine,Struttura) values ('1','40','28/09/2021','20:00','21:30','1');
+insert into Proposta (Servizio,Costo,Data,OraInizio,OraFine,Struttura) values ('2','10','29/07/2021','19:00','20:00','2');
+insert into Proposta (Servizio,Costo,Data,OraInizio,OraFine,Struttura) values ('3','25','30/07/2021','16:00','17:00','3');
+insert into Proposta (Servizio,Costo,Data,OraInizio,OraFine,Struttura) values ('4','50','31/07/2021','17:00','20:00','1');
+//insert into Proposta (Servizio,Costo,Data,OraInizio,OraFine,Struttura) values ('1','50','20/07/2021','21:00','22:30','1');
+//insert into Proposta (Servizio,Costo,Data,OraInizio,OraFine,Struttura) values ('4','40','30/07/2021','19:00','20:00','3');
+
+Insert into PropostaSocieta values ('1','12345678912');
+Insert into PropostaSocieta values ('2','43215678912');
+Insert into PropostaSocieta values ('3','12345678912');
+Insert into PropostaSocieta values ('4','12345678912');
+
+//Insert into PropostaProfessionista values ('5','DGRMRA99L01L219J');
+
+//insert into Cooperazione values ('6','12345678912','BDAPPP86D23H703F');
+
+insert into Prenotazione(DataEsito,Esito, Utente, Proposta) values ('15/05/2021','Acquistato','SPSGNR89T12G942K','2'); 
+insert into Prenotazione(DataEsito,Esito, Utente, Proposta) values ('13/05/2021','Acquistato','PLLLSN99C20H703T','1'); 
+insert into Prenotazione(Esito, Utente, Proposta) values ('Attesa','LNDTMS99S13F138A','5','false');
+insert into Prenotazione(DataEsito,Esito, Utente, Proposta) values ('24/05/2021','Acquistato','MMLMTT85M14H199M','4');
+select * from prenotazione
+insert into Invito (Descrizione,DataEsito,Esito,Prenotazione,UtenteInvitato) values ('Ciao Gennaro, ti invito a partecipare alla partita di beach volleyball','15/05/2021','Accettato','2','SPSGNR89T12G942K');
+insert into Invito (Descrizione,DataEsito,Esito,Prenotazione,UtenteInvitato) values ('Ciao Sara, ti invito a partecipare alla partita di beach volleyball','15/05/2021','Accettato','2','LNDSRA00R41L781V');
+insert into Invito (Descrizione,DataEsito,Esito,Prenotazione,UtenteInvitato) values ('Ciao Thomas, ti invito a partecipare alla partita di beach volleyball','15/05/2021','Rifiutato','2','LNDTMS99S13F138A');
+insert into Invito (Descrizione,DataEsito,Esito,Prenotazione,UtenteInvitato) values ('Ciao Marco, ti invito a partecipare alla partita di beach volleyball','15/05/2021','Accettato','2','SVRMRC79H19H703D');
+insert into Invito (Descrizione,DataEsito,Esito,Prenotazione,UtenteInvitato) values ('Ciao Serena, ti invito a partecipare alla partita di beach volleyball','16/05/2021','Attesa','4','CLPSRN94T65A944U');
+insert into Invito (Descrizione,DataEsito,Esito,Prenotazione,UtenteInvitato) values ('Ciao Valeria, ti invito a partecipare alla partita di beach volleyball','16/05/2021','Attesa','4','CNCVLR01M44L483D');
+insert into Invito (Descrizione,DataEsito,Esito,Prenotazione,UtenteInvitato) values ('Ciao Francesca, ti invito a partecipare alla partita di beach volleyball','16/05/2021','Attesa','4','FRTFNC77L45L219Y');
+insert into Invito (Descrizione,DataEsito,Esito,Prenotazione,UtenteInvitato) values ('Ciao Francesca, ti invito a partecipare alla partita di beach volleyball','16/05/2021','Attesa','4','SPSGNR89T12G942K');
+select * from prenotazione
+update invito set Esito = 'Accettato' where prenotazione = '5' and utenteinvitato ='SPSGNR89T12G942K';
+update invito set Esito = 'Accettato' where prenotazione = '5' and utenteinvitato ='LNDTMS99S13F138A';
+update invito set Esito = 'Accettato' where prenotazione = '5' and utenteinvitato ='SVRMRC79H19H703D';
+
+
+update prenotazione set Esito = 'Attesa' where codice = '3';
+
+select * from prenotazione
+select * from invito
+
+delete from invito;
+delete from prenotazione;
+
+
+Insert into Preferenza (Disciplina,Utente,Livello) values ('1','PLLLSN99C20H703T','Amatoriale');
+Insert into Preferenza (Disciplina,Utente,Livello) values ('2','PLLLSN99C20H703T','Agonistico');
+Insert into Preferenza (Disciplina,Utente,Livello) values ('3','SPSGNR89T12G942K','Novizio');
+Insert into Preferenza (Disciplina,Utente,Livello) values ('4','LNDSRA00R41L781V','Amatoriale');
+Insert into Preferenza (Disciplina,Utente,Livello) values ('1','LNDTMS99S13F138A','Novizio');
+Insert into Preferenza (Disciplina,Utente,Livello) values ('2','SVRMRC79H19H703D','Agonistico');
+Insert into Preferenza (Disciplina,Utente,Livello) values ('3','CNCVLR01M44L483D','Novizio');
+Insert into Preferenza (Disciplina,Utente,Livello) values ('4','FRTFNC77L45L219Y','Agonistico');
+Insert into Preferenza (Disciplina,Utente,Livello) values ('1','MMLMTT85M14H199M','Agonistico');
+Insert into Preferenza (Disciplina,Utente,Livello) values ('2','CLPSRN94T65A944U','Amatoriale');
+
+Insert into Amicizia (Utente,Amico,Disciplina,calendarId) values ('PLLLSN99C20H703T','SPSGNR89T12G942K','1','k172vnttel8nd703s1a7lco68k@group.calendar.google.com');
+Insert into Amicizia (Utente,Amico,Disciplina,calendarId) values ('PLLLSN99C20H703T','LNDSRA00R41L781V','1','k172vnttel8nd703s1a7lco68k@group.calendar.google.com');
+Insert into Amicizia (Utente,Amico,Disciplina,calendarId) values ('PLLLSN99C20H703T','LNDTMS99S13F138A','1','k172vnttel8nd703s1a7lco68k@group.calendar.google.com');
+Insert into Amicizia (Utente,Amico,Disciplina,calendarId) values ('PLLLSN99C20H703T','SVRMRC79H19H703D','1','k172vnttel8nd703s1a7lco68k@group.calendar.google.com');
+Insert into Amicizia (Utente,Amico,Disciplina) values ('SPSGNR89T12G942K','PLLLSN99C20H703T','1');
+Insert into Amicizia (Utente,Amico,Disciplina) values ('SPSGNR89T12G942K','LNDSRA00R41L781V','1');
+Insert into Amicizia (Utente,Amico,Disciplina) values ('SPSGNR89T12G942K','LNDTMS99S13F138A','1');
+Insert into Amicizia (Utente,Amico,Disciplina) values ('SPSGNR89T12G942K','SVRMRC79H19H703D','1');
+Insert into Amicizia (Utente,Amico,Disciplina) values ('LNDTMS99S13F138A','CLPSRN94T65A944U','1');
+Insert into Amicizia (Utente,Amico,Disciplina) values ('LNDTMS99S13F138A','FRTFNC77L45L219Y','1');
+Insert into Amicizia (Utente,Amico,Disciplina) values ('LNDTMS99S13F138A','CNCVLR01M44L483D','1');
+Insert into Amicizia (Utente,Amico,Disciplina) values ('LNDTMS99S13F138A','PLLLSN99C20H703T','1');
+		
+select * from prenotazioniAcquistate
+delete from invito;
+delete from prenotazione;
+
+GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO www;
+GRANT ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA public TO www;
+
+DROP FUNCTION check_numb() cascade;
+CREATE FUNCTION check_numb() returns trigger as $$
+declare
+	x integer;
+	y integer;
+BEGIN
+select count(*) into y from invito where prenotazione = new.prenotazione and esito = 'Accettato';
+if (y=(select distinct Servizio.numeroposti from invito,prenotazione,proposta,servizio 
+	   where invito.prenotazione=prenotazione.codice 
+	   and prenotazione.proposta=proposta.codice and proposta.servizio=servizio.codice and invito.prenotazione = new.prenotazione)-1) then 
+update prenotazione set esito = 'Acquistato', attesa = 'true', conferma = 'true', dataesito = now() where codice = new.prenotazione;
+end if;
+return new;
+END
+$$ Language plpgsql;
+
+CREATE TRIGGER check_numb_none
+AFTER UPDATE ON INVITO
+FOR EACH ROW EXECUTE PROCEDURE check_numb();
+
+
+
+
+

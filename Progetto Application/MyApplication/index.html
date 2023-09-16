@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta name="charset" content="utf-8" />
+    <meta name="author" content="AlessandroPaolillo" />
+    <meta name="description" content="Un sito per lo Sport" />
+    <meta name="keywords" content="Sport, Tesi, Web" />
+    <link rel="icon" href="Img/logo.png" type="image/X-icon" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/meyer-reset/2.0/reset.min.css"
+        integrity="sha512-NmLkDIU1C/C88wi324HBc+S2kLhi08PN5GDeUVVVC/BVt/9Izdsc9SVeVfA1UZbY3sHUlDSyRXhCzHfr6hmPPw=="
+        crossorigin="anonymous" />
+    <link rel="stylesheet" type="text/css" href="styleIndex.css">
+    <link rel="preconnect" href="https://fonts.gstatic.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;700;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/flickity/2.2.2/flickity.css"
+        integrity="sha512-BWbyuqXEQ3cGngKmhUrclr7t9dWpiLiF7w8et2jetBwQh4oJcSuq8UnTWBSlse0UowXya8OZYhGZcAPvTVQtkg=="
+        crossorigin="anonymous" />
+    <script src="https://unpkg.com/scrollreveal@4.0.0/dist/scrollreveal.min.js"></script>
+</head>
+
+<body>
+    <div class="header">
+        <div class="logo"><img src="Img/logo.png" alt="Logo Unisa"></div>
+        <ul class="menu">
+            <li><a href="index.html">Home</a></li>
+        </ul>
+        <div class="cta">
+            <ul class="menu--log">
+                <li><a href="register.php">Registrazione</a></li>
+                <li><a href="login.php">Login</a></li>
+            </ul>
+        </div>
+        <div class="hamburger">
+            <span></span>
+            <span></span>
+            <span></span>
+        </div>
+    </div>
+    <div class="hero">
+        <div class="hero__content reveal">
+            <p class="intro-text">SportClub</p>
+            <h1 class="big-text">Unisa con lo sport</h1>
+            <a href="https://web.unisa.it/" class="button">Vai a UNISA</a>
+        </div>
+        <video autoplay muted loop id="my-video">
+            <source src="Video/pexels-mikhail-nilov-8456206.mp4" type="video/mp4">
+        </video>
+    </div>
+
+    <div class="poster mt-3">
+        <div class="poster__img reveal">
+            <img src="Img/pexels-pavel-danilyuk-7944002.jpg">
+        </div>
+        <div class="poster__content reveal">
+            <h3 class="big-text">Per voi studenti</h3>
+            <p>Una piattaforma che vi permette di fare sport quando lo volete e con chi volete.
+            </p>
+            <a href="register.php" class="button">Sei uno studente Unisa? Registrati</a>
+        </div>
+    </div>
+
+    <div class="poster mt-3">
+        <div class="poster__content reveal">
+            <h3 class="big-text">Per i vostri club</h3>
+            <p>Vi daremo l'opportunit&agrave; di potenziare le vostre offerte offrendovi i nostri servizi perch&egrave; &egrave;
+                lo sport che ci unisce
+            </p>
+            <a href="#RegistrazioneClub" class="button">Registrate il vostro Club</a>
+        </div>
+        <div class="poster__img reveal">
+            <img src="Img/pexels-fauxels-3183197.jpg">
+        </div>
+    </div>
+
+
+    <div class="bg-cover mt-3">
+        <div class="bg-cover__title reveal">
+            <h3 class="big-text tw">Crescere insieme facendo sport</h3>
+        </div>
+        <div class="bg-cover__text reveal">
+            <h4 class="tw normal-text">Alex Zanardi</h4>
+            <p class="tw">Ci si pu&oacute; drogare di cose buone e una di queste &eacute; certamente lo sport.</p>
+            <h4 class="tw normal-text">Pierre de Coubertin</h4>
+            <p class="tw">Lo sport va a cercare la paura per dominarla, la fatica per trionfarne, la difficolt&agrave; per vincerla.</p>
+            <h4 class="tw normal-text">Spike Lee</h4>
+            <p class="tw">La sera prima di gara 5 della finale, Michael Jordan mangi&oacute; una pizza e si becc&oacute; una intossicazione alimentare. Volle scendere ugualmente in campo e segn&oacute; 40 punti. 
+                &Eacute; questo il doping del campione vero: la voglia di giocare.</p>
+
+        </div>
+
+    </div>
+    <footer class="footer reveal">
+        <div class="grid">
+            <div class="colf">
+                <div class="foot tw normal-text">Alessandro Paolillo</div>
+                <a href="mailto:a.paolillo26@studenti.unisa.it" class="tw">a.paolillo26@studenti.unisa.it</a>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Jquery -->
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    <script>
+        $(document).ready(function () {
+            /*Al click si apre il menu*/
+            $(".hamburger").on('click', function () {
+                $(".menu").toggleClass("menu--open");
+            });
+        });
+        /*Utilizziamo lo scroll reveal con lo script in metal, mettiamo il nome dello sccroll dove sta il reveal (Nome classe)
+        e applichiamo questa classe all'elemento da animare, va leggeremente su il testo andando con x velocità*/
+        ScrollReveal().reveal('.reveal', {
+            distance: '150px',
+            duration: '1000',
+            easing: 'cubic-bezier(.215, .61, .355, 1)',
+            interval: 600
+        });
+    </script>
+</body>
+
+</html>
+
